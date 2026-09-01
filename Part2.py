@@ -30,6 +30,7 @@ def traceroute(destination):
 def parse_traceroute(output):
     hops = []
     for line in output.splitlines():
+        # I *think* this works on both traceroute forms, windows or unix
         match = re.search(
             r"^\s*(\d+)\s+"
             r"(\d+)\s*ms\s+"

@@ -1,19 +1,26 @@
 import requests
 import subprocess
+import platform
 from geopy.distance import geodesic
 
 def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)
     try:
-        res = subprocess.check_output(["ping", "-c", "4", ip])
+        cmd = []
+        if platform.system() == "Windows":
+            cmd = ["ping", "-n", "4", ip]
+        else:
+            cmd = ["ping", "-c", "4", ip]
+        res = subprocess.check_output(cmd)
         stats_str_full = res.decode().splitlines()[-1:][0] # string of last line of ping command including "round-trip min/avg/max/stddev =" part
         stats_str = stats_str_full.split("=")[1].strip() # string only last part with stats we need
         stats_arr = stats_str.split("/")[:3] # we don't need stdev so get rid of it
+        stats_float_arr = [-1.0, -1.0, -1.0]
         for i in range(len(stats_arr)):
             try:
-                stats_arr[i] = float(stats_arr[i])
+                stats_float_arr[i] = float(stats_arr[i])
             except ValueError:
                 raise subprocess.CalledProcessError(1, "ping")
-        return (stats_arr[0], stats_arr[2], stats_arr[1])
+        return (stats_float_arr[0], stats_float_arr[2], stats_float_arr[1])
     except subprocess.CalledProcessError:
         print("error pinging")
         return (-1, -1, -1)

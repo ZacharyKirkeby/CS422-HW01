@@ -62,4 +62,6 @@ example of one output line:
 
 ping stats are in ms. if ping stats is a tuple of (-1, -1, -1), that means ping failed and you should probably ignore and not graph that one.
 distance might also be -1, means that there was no valid geolocation result returned from the api, you should also maybe ignore and not graph that either. You likely don't need most of the data in geo_stats but it's all there in case you need to use it in graphing
+
+The data from own IP is NOT included in the server_infos array because I thought that didn't really make much sense to do
 """

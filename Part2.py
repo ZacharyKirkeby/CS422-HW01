@@ -23,7 +23,9 @@ def traceroute(destination):
     else:
         command = ["traceroute", "-n", destination]
 
-    result = subprocess.run(command, capture_output=True, text=True, timeout=150)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=150) # expressly using 
+    # the timout that is the official traceroute failure timeout, bc maybe the process takes a while.
+    # i will fight yall on this 
     return parse_traceroute(result.stdout)
 
 
@@ -53,7 +55,7 @@ def parse_traceroute(output):
 def convert_to_incremental(hops):
     """
     Convert cumulative RTTs into per-hop latency.
-    Shoutout chatgpt i didnt think of thi
+    Shoutout chatgpt i didnt think of this
     Example:
         10 ms -> 10 ms
         17 ms ->  7 ms
@@ -72,6 +74,9 @@ def convert_to_incremental(hops):
 
 
 def plot_results(results):
+    # graphic design is a headache and passion
+    # the legend kinda just goes where ever that might want to be fixed
+
     destinations = list(results.keys())
     fig, ax = plt.subplots(figsize=(12, 7))
     bottoms = [0] * len(destinations)
@@ -106,6 +111,7 @@ def plot_results(results):
 def main():
     destinations = load_destinations(IP_FILE)
 
+    # robustness
     if len(destinations) < NUM_DESTINATIONS:
         raise ValueError(
             f"Need at least {NUM_DESTINATIONS} destinations"
@@ -122,7 +128,7 @@ def main():
         destination = entry["IP/HOST"]
 
         print(f"  {destination}, {entry['COUNTRY']}")
-
+        # try except loop for robustness / preventing issues if networking is finicky
         try:
             hops = traceroute(destination)
 

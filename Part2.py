@@ -51,48 +51,55 @@ def parse_traceroute(output):
 
     return hops
 
-
 def convert_to_incremental(hops):
     """
-    Convert cumulative RTTs into per-hop latency.
-    Shoutout chatgpt i didnt think of this
-    Example:
-        10 ms -> 10 ms
-        17 ms ->  7 ms
-        25 ms ->  8 ms
+        Convert cumulative RTTs into per-hop latency.
+        Shoutout chatgpt i didnt think of this
+        Example:
+            10 ms -> 10 ms
+            17 ms ->  7 ms
+            25 ms ->  8 ms
     """
-
+      
     result = []
-    previous = 0
+    previous_rtt = 0
+    previous_hop = 0
 
     for hop, rtt in hops:
-        latency = max(0, rtt - previous)
+        # Add missing hops as zero
+        for missing_hop in range(previous_hop + 1, hop):
+            result.append((missing_hop, 0))
+
+        latency = max(0, rtt - previous_rtt)
         result.append((hop, latency))
-        previous = rtt
+
+        previous_rtt = rtt
+        previous_hop = hop
 
     return result
 
-
 def plot_results(results):
-    # graphic design is a headache and passion
-    # the legend kinda just goes where ever that might want to be fixed
-
     destinations = list(results.keys())
     fig, ax = plt.subplots(figsize=(12, 7))
+
+    max_hop = max(
+        hop
+        for hops in results.values()
+        for hop, _ in hops
+    )
+
     bottoms = [0] * len(destinations)
-    max_hops = max(len(hops) for hops in results.values())
-
-    for hop_index in range(max_hops):
+    for hop_num in range(1, max_hop + 1):
         values = []
-
         for destination in destinations:
             hops = results[destination]
-            if hop_index < len(hops):
-                values.append(hops[hop_index][1])
-            else:
-                values.append(0)
+            rtt = next(
+                (latency for hop, latency in hops if hop == hop_num),
+                0
+            )
+            values.append(rtt)
 
-        ax.bar(destinations, values, bottom=bottoms, label=f"Hop {hop_index + 1}")
+        ax.bar(destinations, values, bottom=bottoms, label=f"Hop {hop_num}")
         bottoms = [
             bottom + value
             for bottom, value in zip(bottoms, values)
@@ -131,6 +138,7 @@ def main():
         # try except loop for robustness / preventing issues if networking is finicky
         try:
             hops = traceroute(destination)
+            print(f" Destination {destination} RTTs")
 
             if not hops:
                 print("No Response, selecting another")
@@ -150,6 +158,8 @@ def main():
             f"Could only obtain {len(results)} successful "
             f"traceroutes from {len(destinations)} destinations"
         )
+    print(results)
+    
     plot_results(results)
 
 

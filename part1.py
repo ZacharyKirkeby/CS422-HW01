@@ -1,6 +1,7 @@
 import requests
 import subprocess
 import platform
+import re
 from geopy.distance import geodesic
 
 def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)
@@ -11,16 +12,29 @@ def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)
         else:
             cmd = ["ping", "-c", "4", ip]
         res = subprocess.check_output(cmd)
-        stats_str_full = res.decode().splitlines()[-1:][0] # string of last line of ping command including "round-trip min/avg/max/stddev =" part
-        stats_str = stats_str_full.split("=")[1].strip() # string only last part with stats we need
-        stats_arr = stats_str.split("/")[:3] # we don't need stdev so get rid of it
-        stats_float_arr = [-1.0, -1.0, -1.0]
-        for i in range(len(stats_arr)):
-            try:
-                stats_float_arr[i] = float(stats_arr[i])
-            except ValueError:
+        stats_str_full = res.decode(errors="replace").splitlines()[-1:][0] # string of last line of ping command including "round-trip min/avg/max/stddev =" part
+        if platform.system() == "Windows":
+            # windows last line is like "Minimum = 226ms, Maximum = 246ms, Average = 238ms"
+            stats_arr = re.findall(r"=\s*(\d+(?:\.\d+)?)\s*ms", stats_str_full) # regex to specifically get rid of ms
+            if len(stats_arr) != 3:
                 raise subprocess.CalledProcessError(1, "ping")
-        return (stats_float_arr[0], stats_float_arr[2], stats_float_arr[1])
+            stats_float_arr = [-1.0, -1.0, -1.0]
+            for i in range(len(stats_arr)):
+                try:
+                    stats_float_arr[i] = float(stats_arr[i])
+                except ValueError:
+                    raise subprocess.CalledProcessError(1, "ping")
+            return (stats_float_arr[0], stats_float_arr[1], stats_float_arr[2])
+        else:
+            stats_str = stats_str_full.split("=")[1].strip() # string only last part with stats we need
+            stats_arr = stats_str.split("/")[:3] # we don't need stdev so get rid of it
+            stats_float_arr = [-1.0, -1.0, -1.0]
+            for i in range(len(stats_arr)):
+                try:
+                    stats_float_arr[i] = float(stats_arr[i])
+                except ValueError:
+                    raise subprocess.CalledProcessError(1, "ping")
+            return (stats_float_arr[0], stats_float_arr[2], stats_float_arr[1])
     except subprocess.CalledProcessError:
         print("error pinging")
         return (-1, -1, -1)

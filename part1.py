@@ -3,6 +3,7 @@ import subprocess
 import platform
 import re
 from geopy.distance import geodesic
+import matplotlib.pyplot as plt
 
 def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)
     try:
@@ -51,6 +52,7 @@ print(f"[*] My ping min/max/avg: {my_min}/{my_max}/{my_avg}")
 servers = requests.get("http://export.iperf3serverlist.net/listed_iperf3_servers.json").json() # i'm gonna be so real i didn't realize we were supposed to use a downloaded file to pull the data so I just used their json file instead
 
 server_infos = []
+rttanddists = [] #I refuse to use subdictionaries
 
 for server in servers:
     print(f"[*] Pinging server at {server['IP/HOST']}")
@@ -65,6 +67,9 @@ for server in servers:
                 }
             }
         )
+        dist = geodesic((my_geo["lat"], my_geo["lon"]), (geo_res["lat"], geo_res["lon"])).miles
+        if (dist != 0) :
+            rttanddists.append([ping_res[2], dist])
     except KeyError: # in the case that an ip does not have geolocation
         server_infos.append({
                 server['IP/HOST']: {
@@ -75,7 +80,25 @@ for server in servers:
             }
         )
 
+def plot_1b(rttanddists):
+    #plot avaerage rtt vs distance
+    rtts = []
+    dists = []
+
+    for loc in rttanddists:
+        if (loc[0] > 0 ): #filter out failed geolocating
+            rtts.append(loc[0])
+            dists.append(loc[1])
+     
+    plt.scatter(dists, rtts)
+    plt.title("Distance vs Round Trip Time")
+    plt.xlabel("Distance")
+    plt.ylabel("Round Trip Time")
+    plt.show()
+    return
+
 print(server_infos)
+plot_1b(rttanddists)
 
 """
 example of one output line:

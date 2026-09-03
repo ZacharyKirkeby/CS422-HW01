@@ -114,6 +114,37 @@ def plot_results(results):
     plt.tight_layout()
     plt.show()
 
+def plot_2c(results):
+    fig, ax = plt.subplots(figsize=(12, 7))
+    #plotting hopcount against time
+    #I need to add up the hop time
+    #which we had before zach so graciously converted it to incremental
+    hopcounts = []
+    rtts = []
+
+    destinations = list(results.keys())
+    for dest in destinations:
+        hops = results[dest]
+        #^ list of hops
+        rtt = 0
+        hopct = 0
+        for hop in hops:
+            rtt += hop[1]
+            if (hop[1] != 0): #filter out nonresponsive hops
+                hopct += 1
+        hopcounts.append(hopct)
+        rtts.append(rtt)
+        #print(dest)
+        #print("Rtt:", rtt)
+        #print("hops:", hopct)
+
+    plt.scatter(rtts, hopcounts)
+    plt.title("Round Trip Time vs Hop Count")
+    plt.xlabel("Round Trip Time")
+    plt.ylabel("Hop Count")
+    plt.show()
+
+    return
 
 def main():
     destinations = load_destinations(IP_FILE)
@@ -161,6 +192,7 @@ def main():
     print(results)
     
     plot_results(results)
+    plot_2c(results)
 
 
 if __name__ == "__main__":

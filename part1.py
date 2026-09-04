@@ -9,9 +9,9 @@ def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)
     try:
         cmd = []
         if platform.system() == "Windows":
-            cmd = ["ping", "-n", "4", ip]
+            cmd = ["ping", "-n", "10", ip]
         else:
-            cmd = ["ping", "-c", "4", ip]
+            cmd = ["ping", "-c", "1", ip]
         res = subprocess.check_output(cmd)
         stats_str_full = res.decode(errors="replace").splitlines()[-1:][0] # string of last line of ping command including "round-trip min/avg/max/stddev =" part
         if platform.system() == "Windows":

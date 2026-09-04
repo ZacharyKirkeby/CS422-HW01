@@ -208,7 +208,7 @@ def main():
     print("[*] My ip:", my_ip)
     print("[*] My geo:", my_geo)
     my_min, my_max, my_avg = ping(my_ip)
-    print(f"[*] My ping min/max/avg: {my_min}/{my_max}/{my_avg}")
+    print(f"[*] My ping min/max/avg: {my_min}/{my_max}/{my_avg}ms")
 
     servers = requests.get("http://export.iperf3serverlist.net/listed_iperf3_servers.json").json() # i'm gonna be so real i didn't realize we were supposed to use a downloaded file to pull the data so I just used their json file instead
 
@@ -216,8 +216,13 @@ def main():
     rttanddists = [] #I refuse to use subdictionaries
 
     for server in servers:
-        print(f"[*] Pinging server at {server['IP/HOST']}")
+        outstr = f"[*] Server {server['IP/HOST']} "
         ping_res = ping(server['IP/HOST'])
+        if ping_res == (-1, -1, -1):
+            outstr += "did not respond to ping and "
+        else:
+            min, max, avg = ping_res
+            outstr += f"has min/max/avg ping = {min}/{max}/{avg}ms and "
         geo_res = requests.get("http://ip-api.com/json/" + server['IP/HOST']).json()
         try:
             server_infos.append({
@@ -228,6 +233,7 @@ def main():
                 }
             )
             dist = geodesic((my_geo["lat"], my_geo["lon"]), (geo_res["lat"], geo_res["lon"])).miles
+            outstr += f"is located at lat/lon = {geo_res['lat']}/{geo_res['lon']}."
             if (dist != 0) :
                 rttanddists.append([ping_res[2], dist])
         except KeyError: # in the case that an ip does not have geolocation
@@ -238,19 +244,10 @@ def main():
                     "distance": -1
                 }
             )
-
-    for server_info in server_infos:
-        outstr = f"[*] Server {server_info['server']} "
-        if server_info["ping_stats"] == (-1, -1, -1):
-            outstr += "did not respond to ping and "
-        else:
-            min, max, avg = server_info['ping_stats']
-            outstr += f"min/max/avg ping = {min}/{max}/{avg} and "
-        if server_info["distance"] == -1:
             outstr += "did not have geolocation details."
-        else:
-            outstr += f"is located at lat/lon = {server_info['geo_stats']['lat']}/{server_info['geo_stats']['lon']}."
-        print(outstr)
+        finally:
+            print(outstr)
+
     plot_1b(rttanddists)
 
     destinations = load_destinations(IP_FILE)

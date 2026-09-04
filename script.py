@@ -8,7 +8,7 @@ from geopy.distance import geodesic
 import matplotlib.pyplot as plt
 
 # Verify that the json file is desired not just a literal list of IPs
-IP_FILE = "data\\listed_iperf3_servers.json"
+IP_FILE = "data/listed_iperf3_servers.json"
 NUM_DESTINATIONS = 5
 
 def ping(ip: str) -> tuple[float, float, float]: # returns (min, max, avg)

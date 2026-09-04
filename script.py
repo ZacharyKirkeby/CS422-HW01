@@ -221,11 +221,10 @@ def main():
         geo_res = requests.get("http://ip-api.com/json/" + server['IP/HOST']).json()
         try:
             server_infos.append({
-                    server['IP/HOST']: {
-                        "ping_stats": ping_res,
-                        "geo_stats": geo_res,
-                        "distance": geodesic((my_geo["lat"], my_geo["lon"]), (geo_res["lat"], geo_res["lon"])).miles
-                    }
+                    "server": server['IP/HOST'],
+                    "ping_stats": ping_res,
+                    "geo_stats": geo_res,
+                    "distance": geodesic((my_geo["lat"], my_geo["lon"]), (geo_res["lat"], geo_res["lon"])).miles
                 }
             )
             dist = geodesic((my_geo["lat"], my_geo["lon"]), (geo_res["lat"], geo_res["lon"])).miles
@@ -233,15 +232,25 @@ def main():
                 rttanddists.append([ping_res[2], dist])
         except KeyError: # in the case that an ip does not have geolocation
             server_infos.append({
-                    server['IP/HOST']: {
-                        "ping_stats": ping_res,
-                        "geo_stats": geo_res,
-                        "distance": -1.0
-                    }
+                    "server": server['IP/HOST'],
+                    "ping_stats": ping_res,
+                    "geo_stats": geo_res,
+                    "distance": -1
                 }
             )
 
-    print(server_infos)
+    for server_info in server_infos:
+        outstr = f"[*] Server {server_info['server']} "
+        if server_info["ping_stats"] == (-1, -1, -1):
+            outstr += "did not respond to ping and "
+        else:
+            min, max, avg = server_info['ping_stats']
+            outstr += f"min/max/avg ping = {min}/{max}/{avg} and "
+        if server_info["distance"] == -1:
+            outstr += "did not have geolocation details."
+        else:
+            outstr += f"is located at lat/lon = {server_info['geo_stats']['lat']}/{server_info['geo_stats']['lon']}."
+        print(outstr)
     plot_1b(rttanddists)
 
     destinations = load_destinations(IP_FILE)
